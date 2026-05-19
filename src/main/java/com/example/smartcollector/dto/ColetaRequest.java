@@ -1,11 +1,14 @@
 package com.example.smartcollector.dto;
 
-import java.time.LocalDateTime;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
 
 public record ColetaRequest(
-        LocalDateTime data,
-        Long catadorId,
-        Long descartadorId,
-        Long centroColetaId,
-        Boolean foiFinalizada
+        @NotBlank(message = "O endereço é obrigatório")
+        String endereco,
+
+        @NotNull(message = "O ID do usuário é obrigatório")
+        @Positive(message = "O ID do usuário deve ser maior que zero")
+        Long idUsuario
 ) {}

@@ -1,11 +1,12 @@
 package com.example.smartcollector.service;
 
+import com.example.smartcollector.dto.CentroColetaRequest;
+import com.example.smartcollector.dto.CentroColetaResponse;
 import com.example.smartcollector.model.CentroColeta;
 import com.example.smartcollector.repository.CentroColetaRepository;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.Optional;
 
 @Service
 public class CentroColetaService {
@@ -16,27 +17,43 @@ public class CentroColetaService {
         this.centroColetaRepository = centroColetaRepository;
     }
 
-    public List<CentroColeta> listarTodos() {
-        return centroColetaRepository.findAll();
+    public List<CentroColetaResponse> listarTodos() {
+        return centroColetaRepository.findAll()
+                .stream()
+                .map(this::toResponse)
+                .toList();
     }
 
-    public Optional<CentroColeta> buscarPorId(Long id) {
-        return centroColetaRepository.findById(id);
+    public CentroColetaResponse buscarPorId(Long id) {
+        CentroColeta centroColeta = centroColetaRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Centro de coleta não encontrado"));
+
+        return toResponse(centroColeta);
     }
 
-    public CentroColeta salvar(CentroColeta centroColeta) {
-        return centroColetaRepository.save(centroColeta);
+    public CentroColetaResponse salvar(CentroColetaRequest request) {
+        CentroColeta centroColeta = new CentroColeta();
+
+        centroColeta.setEndereco(request.endereco());
+        centroColeta.setVolumeItensTotal(request.volumeItensTotal());
+        centroColeta.setVolumeItensAtual(request.volumeItensAtual());
+
+        CentroColeta centroSalvo = centroColetaRepository.save(centroColeta);
+
+        return toResponse(centroSalvo);
     }
 
-    public CentroColeta atualizar(Long id, CentroColeta centroColetaAtualizado) {
+    public CentroColetaResponse atualizar(Long id, CentroColetaRequest request) {
         CentroColeta centroExistente = centroColetaRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Centro de coleta não encontrado"));
 
-        centroExistente.setEndereco(centroColetaAtualizado.getEndereco());
-        centroExistente.setVolumeItensTotal(centroColetaAtualizado.getVolumeItensTotal());
-        centroExistente.setVolumeItensAtual(centroColetaAtualizado.getVolumeItensAtual());
+        centroExistente.setEndereco(request.endereco());
+        centroExistente.setVolumeItensTotal(request.volumeItensTotal());
+        centroExistente.setVolumeItensAtual(request.volumeItensAtual());
 
-        return centroColetaRepository.save(centroExistente);
+        CentroColeta centroAtualizado = centroColetaRepository.save(centroExistente);
+
+        return toResponse(centroAtualizado);
     }
 
     public void deletar(Long id) {
@@ -45,5 +62,14 @@ public class CentroColetaService {
         }
 
         centroColetaRepository.deleteById(id);
+    }
+
+    private CentroColetaResponse toResponse(CentroColeta centroColeta) {
+        return new CentroColetaResponse(
+                centroColeta.getId(),
+                centroColeta.getEndereco(),
+                centroColeta.getVolumeItensTotal(),
+                centroColeta.getVolumeItensAtual()
+        );
     }
 }

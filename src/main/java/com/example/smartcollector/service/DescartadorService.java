@@ -1,5 +1,6 @@
 package com.example.smartcollector.service;
 
+import com.example.smartcollector.dto.DescartadorRequest;
 import com.example.smartcollector.model.Descartador;
 import com.example.smartcollector.model.Usuario;
 import com.example.smartcollector.repository.DescartadorRepository;
@@ -28,22 +29,24 @@ public class DescartadorService {
         return descartadorRepository.findById(id);
     }
 
-    public Descartador salvar(Descartador descartador) {
-        Long usuarioId = descartador.getUsuario().getId();
+    public Descartador salvar(DescartadorRequest request) {
+        Long usuarioId = request.idUsuario();
 
         Usuario usuario = usuarioRepository.findById(usuarioId)
                 .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
 
+        Descartador descartador = new Descartador();
         descartador.setUsuario(usuario);
+        descartador.setEndereco(request.endereco());
 
         return descartadorRepository.save(descartador);
     }
 
-    public Descartador atualizar(Long id, Descartador descartadorAtualizado) {
+    public Descartador atualizar(Long id, DescartadorRequest request) {
         Descartador descartadorExistente = descartadorRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Descartador não encontrado"));
 
-        descartadorExistente.setEndereco(descartadorAtualizado.getEndereco());
+        descartadorExistente.setEndereco(request.endereco());
 
         return descartadorRepository.save(descartadorExistente);
     }

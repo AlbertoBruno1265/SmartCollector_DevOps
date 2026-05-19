@@ -1,12 +1,17 @@
 package com.example.smartcollector.controller;
 
+import com.example.smartcollector.dto.ColetaItemRequest;
 import com.example.smartcollector.model.ColetaItem;
 import com.example.smartcollector.service.ColetaItemService;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.Positive;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+@Validated
 @RestController
 @RequestMapping("/coleta-itens")
 public class ColetaItemController {
@@ -25,8 +30,13 @@ public class ColetaItemController {
 
     @GetMapping("/{idColeta}/{idItem}")
     public ResponseEntity<ColetaItem> buscarPorId(
-            @PathVariable Long idColeta,
-            @PathVariable Long idItem
+            @PathVariable
+            @Positive(message = "O ID da coleta deve ser maior que zero")
+            Long idColeta,
+
+            @PathVariable
+            @Positive(message = "O ID do item deve ser maior que zero")
+            Long idItem
     ) {
         return coletaItemService.buscarPorId(idColeta, idItem)
                 .map(ResponseEntity::ok)
@@ -34,15 +44,22 @@ public class ColetaItemController {
     }
 
     @PostMapping
-    public ResponseEntity<ColetaItem> cadastrar(@RequestBody ColetaItem coletaItem) {
-        ColetaItem coletaItemSalvo = coletaItemService.salvar(coletaItem);
+    public ResponseEntity<ColetaItem> cadastrar(
+            @Valid @RequestBody ColetaItemRequest request
+    ) {
+        ColetaItem coletaItemSalvo = coletaItemService.salvar(request);
         return ResponseEntity.ok(coletaItemSalvo);
     }
 
     @DeleteMapping("/{idColeta}/{idItem}")
     public ResponseEntity<Void> deletar(
-            @PathVariable Long idColeta,
-            @PathVariable Long idItem
+            @PathVariable
+            @Positive(message = "O ID da coleta deve ser maior que zero")
+            Long idColeta,
+
+            @PathVariable
+            @Positive(message = "O ID do item deve ser maior que zero")
+            Long idItem
     ) {
         coletaItemService.deletar(idColeta, idItem);
         return ResponseEntity.noContent().build();

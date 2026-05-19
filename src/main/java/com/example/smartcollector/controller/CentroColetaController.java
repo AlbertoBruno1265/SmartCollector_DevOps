@@ -1,7 +1,9 @@
 package com.example.smartcollector.controller;
 
-import com.example.smartcollector.model.CentroColeta;
+import com.example.smartcollector.dto.CentroColetaRequest;
+import com.example.smartcollector.dto.CentroColetaResponse;
 import com.example.smartcollector.service.CentroColetaService;
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -18,31 +20,28 @@ public class CentroColetaController {
     }
 
     @GetMapping
-    public ResponseEntity<List<CentroColeta>> listarTodos() {
-        List<CentroColeta> centros = centroColetaService.listarTodos();
-        return ResponseEntity.ok(centros);
+    public ResponseEntity<List<CentroColetaResponse>> listarTodos() {
+        return ResponseEntity.ok(centroColetaService.listarTodos());
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<CentroColeta> buscarPorId(@PathVariable Long id) {
-        return centroColetaService.buscarPorId(id)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
+    public ResponseEntity<CentroColetaResponse> buscarPorId(@PathVariable Long id) {
+        return ResponseEntity.ok(centroColetaService.buscarPorId(id));
     }
 
     @PostMapping
-    public ResponseEntity<CentroColeta> cadastrar(@RequestBody CentroColeta centroColeta) {
-        CentroColeta centroSalvo = centroColetaService.salvar(centroColeta);
-        return ResponseEntity.ok(centroSalvo);
+    public ResponseEntity<CentroColetaResponse> salvar(
+            @Valid @RequestBody CentroColetaRequest request
+    ) {
+        return ResponseEntity.ok(centroColetaService.salvar(request));
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<CentroColeta> atualizar(
+    public ResponseEntity<CentroColetaResponse> atualizar(
             @PathVariable Long id,
-            @RequestBody CentroColeta centroColeta
+            @Valid @RequestBody CentroColetaRequest request
     ) {
-        CentroColeta centroAtualizado = centroColetaService.atualizar(id, centroColeta);
-        return ResponseEntity.ok(centroAtualizado);
+        return ResponseEntity.ok(centroColetaService.atualizar(id, request));
     }
 
     @DeleteMapping("/{id}")

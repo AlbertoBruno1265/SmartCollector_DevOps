@@ -1,5 +1,6 @@
 package com.example.smartcollector.service;
 
+import com.example.smartcollector.dto.ColetaItemRequest;
 import com.example.smartcollector.model.Coleta;
 import com.example.smartcollector.model.ColetaItem;
 import com.example.smartcollector.model.Item;
@@ -37,9 +38,9 @@ public class ColetaItemService {
         return coletaItemRepository.findById(id);
     }
 
-    public ColetaItem salvar(ColetaItem coletaItem) {
-        Long idColeta = coletaItem.getIdColeta();
-        Long idItem = coletaItem.getIdItem();
+    public ColetaItem salvar(ColetaItemRequest request) {
+        Long idColeta = request.idColeta();
+        Long idItem = request.idItem();
 
         Coleta coleta = coletaRepository.findById(idColeta)
                 .orElseThrow(() -> new RuntimeException("Coleta não encontrada"));
@@ -47,6 +48,15 @@ public class ColetaItemService {
         Item item = itemRepository.findById(idItem)
                 .orElseThrow(() -> new RuntimeException("Item não encontrado"));
 
+        ColetaItem.ColetaItemId id = new ColetaItem.ColetaItemId(idColeta, idItem);
+
+        if (coletaItemRepository.existsById(id)) {
+            throw new RuntimeException("Este item já está vinculado a esta coleta");
+        }
+
+        ColetaItem coletaItem = new ColetaItem();
+        coletaItem.setIdColeta(idColeta);
+        coletaItem.setIdItem(idItem);
         coletaItem.setColeta(coleta);
         coletaItem.setItem(item);
 

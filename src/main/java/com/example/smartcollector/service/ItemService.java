@@ -1,5 +1,6 @@
 package com.example.smartcollector.service;
 
+import com.example.smartcollector.dto.ItemRequest;
 import com.example.smartcollector.model.Item;
 import com.example.smartcollector.repository.ItemRepository;
 import org.springframework.stereotype.Service;
@@ -24,16 +25,20 @@ public class ItemService {
         return itemRepository.findById(id);
     }
 
-    public Item salvar(Item item) {
+    public Item salvar(ItemRequest request) {
+        Item item = new Item();
+        item.setNome(request.nome());
+        item.setVolume(request.volume());
+
         return itemRepository.save(item);
     }
 
-    public Item atualizar(Long id, Item itemAtualizado) {
+    public Item atualizar(Long id, ItemRequest request) {
         Item itemExistente = itemRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Item não encontrado"));
 
-        itemExistente.setNome(itemAtualizado.getNome());
-        itemExistente.setVolume(itemAtualizado.getVolume());
+        itemExistente.setNome(request.nome());
+        itemExistente.setVolume(request.volume());
 
         return itemRepository.save(itemExistente);
     }

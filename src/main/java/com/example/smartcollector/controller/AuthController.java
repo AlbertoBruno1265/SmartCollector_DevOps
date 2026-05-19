@@ -6,6 +6,7 @@ import com.example.smartcollector.dto.RegisterRequest;
 import com.example.smartcollector.model.Usuario;
 import com.example.smartcollector.repository.UsuarioRepository;
 import com.example.smartcollector.service.TokenService;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -30,7 +31,7 @@ public class AuthController {
     private PasswordEncoder passwordEncoder;
 
     @PostMapping("/login")
-    public ResponseEntity<LoginResponse> login(@RequestBody LoginRequest request) {
+    public ResponseEntity<LoginResponse> login(@Valid @RequestBody LoginRequest request) {
         var usernamePassword = new UsernamePasswordAuthenticationToken(
                 request.email(), request.senha()
         );
@@ -40,7 +41,7 @@ public class AuthController {
     }
 
     @PostMapping("/registro")
-    public ResponseEntity<String> registro(@RequestBody RegisterRequest request) {
+    public ResponseEntity<String> registro(@Valid @RequestBody RegisterRequest request) {
         if (usuarioRepository.findByEmail(request.email()) != null)
             return ResponseEntity.badRequest().body("Email já cadastrado");
 

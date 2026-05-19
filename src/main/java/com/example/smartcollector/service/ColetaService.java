@@ -1,5 +1,6 @@
 package com.example.smartcollector.service;
 
+import com.example.smartcollector.dto.ColetaRequest;
 import com.example.smartcollector.model.Catador;
 import com.example.smartcollector.model.CentroColeta;
 import com.example.smartcollector.model.Coleta;
@@ -42,58 +43,30 @@ public class ColetaService {
         return coletaRepository.findById(id);
     }
 
-    public Coleta salvar(Coleta coleta) {
-        Long descartadorId = coleta.getDescartador().getId();
+    public Coleta salvar(ColetaRequest request) {
+        Long descartadorId = request.idUsuario();
 
         Descartador descartador = descartadorRepository.findById(descartadorId)
                 .orElseThrow(() -> new RuntimeException("Descartador não encontrado"));
 
+        Coleta coleta = new Coleta();
         coleta.setDescartador(descartador);
-
-        if (coleta.getData() == null) {
-            coleta.setData(LocalDateTime.now());
-        }
-
-        if (coleta.getFoiFinalizada() == null) {
-            coleta.setFoiFinalizada(false);
-        }
+        coleta.setData(LocalDateTime.now());
+        coleta.setFoiFinalizada(false);
 
         return coletaRepository.save(coleta);
     }
 
-    public Coleta atualizar(Long id, Coleta coletaAtualizada) {
+    public Coleta atualizar(Long id, ColetaRequest request) {
         Coleta coletaExistente = coletaRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Coleta não encontrada"));
 
-        coletaExistente.setData(coletaAtualizada.getData());
-        coletaExistente.setFoiFinalizada(coletaAtualizada.getFoiFinalizada());
+        Long descartadorId = request.idUsuario();
 
-        if (coletaAtualizada.getDescartador() != null) {
-            Long descartadorId = coletaAtualizada.getDescartador().getId();
+        Descartador descartador = descartadorRepository.findById(descartadorId)
+                .orElseThrow(() -> new RuntimeException("Descartador não encontrado"));
 
-            Descartador descartador = descartadorRepository.findById(descartadorId)
-                    .orElseThrow(() -> new RuntimeException("Descartador não encontrado"));
-
-            coletaExistente.setDescartador(descartador);
-        }
-
-        if (coletaAtualizada.getCatador() != null) {
-            Long catadorId = coletaAtualizada.getCatador().getId();
-
-            Catador catador = catadorRepository.findById(catadorId)
-                    .orElseThrow(() -> new RuntimeException("Catador não encontrado"));
-
-            coletaExistente.setCatador(catador);
-        }
-
-        if (coletaAtualizada.getCentroColeta() != null) {
-            Long centroId = coletaAtualizada.getCentroColeta().getId();
-
-            CentroColeta centroColeta = centroColetaRepository.findById(centroId)
-                    .orElseThrow(() -> new RuntimeException("Centro de coleta não encontrado"));
-
-            coletaExistente.setCentroColeta(centroColeta);
-        }
+        coletaExistente.setDescartador(descartador);
 
         return coletaRepository.save(coletaExistente);
     }
