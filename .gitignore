@@ -31,3 +31,11 @@ build/
 
 ### VS Code ###
 .vscode/
+
+# Configuracoes locais e segredos
+.env
+.env.*
+!.env.example
+
+# Relatorios gerados localmente
+test-results/

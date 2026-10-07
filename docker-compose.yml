@@ -1,0 +1,35 @@
+services:
+  oracle:
+    image: gvenzl/oracle-free:23-slim
+    container_name: oracle-db
+    environment:
+      ORACLE_PASSWORD: ${ORACLE_PASSWORD:?Preencha ORACLE_PASSWORD no arquivo .env}
+      APP_USER: ${DB_USER:?Preencha DB_USER no arquivo .env}
+      APP_USER_PASSWORD: ${DB_PASSWORD:?Preencha DB_PASSWORD no arquivo .env}
+    ports:
+      - "${ORACLE_PORT:-1521}:1521"
+    volumes:
+      - oracle_data:/opt/oracle/oradata
+    healthcheck:
+      test: ["CMD", "healthcheck.sh"]
+      interval: 20s
+      timeout: 10s
+      retries: 10
+      start_period: 60s
+
+  app:
+    build: .
+    container_name: smartcollector-app
+    depends_on:
+      oracle:
+        condition: service_healthy
+    ports:
+      - "${APP_PORT:-8080}:8080"
+    environment:
+      DB_URL: ${DB_URL:?Preencha DB_URL no arquivo .env}
+      DB_USER: ${DB_USER:?Preencha DB_USER no arquivo .env}
+      DB_PASSWORD: ${DB_PASSWORD:?Preencha DB_PASSWORD no arquivo .env}
+      JWT_SECRET: ${JWT_SECRET:?Preencha JWT_SECRET no arquivo .env}
+
+volumes:
+  oracle_data:
