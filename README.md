@@ -118,7 +118,13 @@ Na aba Actions, abra a execucao e os artefatos:
 
 Os PNGs mostram relatorios de chamadas reais a API: cadastro, login, criacao e consulta de itens. Sao evidencias HTTP da API, nao uma interface web da aplicacao. Senhas e tokens nao sao registrados nesses relatorios.
 
-Execucoes: https://github.com/AlbertoBruno1265/SmartCollector_DevOps/actions
+Execucao comprovada em 07/10/2026: [build, testes e dois deploys aprovados](https://github.com/AlbertoBruno1265/SmartCollector_DevOps/actions/runs/37665521088), commit `8dcb582`, duracao de 4min17s. Cadastro, login, criacao e consulta de itens retornaram HTTP 200 nos dois ambientes.
+
+![Etapas do pipeline concluidas](docs/prints/pipeline-etapas-sucesso.jpg)
+
+![Resumo de staging e producao com chamadas HTTP aprovadas](docs/prints/pipeline-deploy-summary.jpg)
+
+Esses prints ficam no repositorio para preservar a evidencia apos a expiracao dos artefatos do Actions (14 dias). Os relatorios detalhados e PNGs de cada ambiente estao no artefato `evidencias-deploy` dessa execucao.
 
 ## Tecnologias utilizadas
 
@@ -130,6 +136,6 @@ Java 21, Spring Boot 4.0.6, Maven, Spring Security/JWT, JPA/Hibernate, Oracle Fr
 - [x] Dockerfile construido e executado.
 - [x] Compose com volume, variaveis e rede.
 - [x] Build e teste existente executados no GitHub Actions.
-- [ ] Deploy em staging e producao confirmado na nova execucao.
+- [x] Deploy em staging e producao executado e verificado no GitHub Actions.
 - [x] README com instrucoes e acesso as evidencias do pipeline.
 - [ ] PDF ou PPT com integrantes e evidencias.
