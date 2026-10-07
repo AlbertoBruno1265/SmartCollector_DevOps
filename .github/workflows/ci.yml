@@ -1,0 +1,62 @@
+name: CI - Build e testes SmartCollector
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-and-test:
+    name: Build Java, testes Oracle e imagem Docker
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    steps:
+      - name: Baixar o código do repositório
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Conferir Docker e validar o Compose de testes
+        run: |
+          docker version
+          docker compose version
+          docker compose -p smartcollector-ci -f compose.test.yml config --quiet
+
+      - name: Compilar e executar os testes com Oracle
+        run: |
+          docker compose -p smartcollector-ci -f compose.test.yml up \
+            --abort-on-container-exit \
+            --exit-code-from tests \
+            --attach tests
+
+      - name: Copiar logs e relatórios dos testes
+        if: always()
+        run: |
+          mkdir -p test-results
+          docker compose -p smartcollector-ci -f compose.test.yml logs \
+            --no-color > test-results/containers.log
+          docker compose -p smartcollector-ci -f compose.test.yml cp \
+            tests:/workspace/target/surefire-reports ./test-results/
+
+      - name: Guardar os resultados no GitHub
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: resultados-testes
+          path: test-results/
+          retention-days: 14
+          if-no-files-found: error
+
+      - name: Construir a imagem Docker da aplicação
+        run: docker build -t smartcollector-ci:${{ github.sha }} .
+
+      - name: Encerrar o ambiente de testes
+        if: always()
+        run: |
+          docker compose -p smartcollector-ci -f compose.test.yml down --volumes
