@@ -39,3 +39,6 @@ build/
 
 # Relatorios gerados localmente
 test-results/
+
+# Evidencias geradas durante o deploy
+evidencias/

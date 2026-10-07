@@ -1,0 +1,34 @@
+# Mesmo arquivo, projetos Compose separados para staging e producao.
+services:
+  oracle:
+    image: gvenzl/oracle-free:23-slim
+    environment:
+      ORACLE_PASSWORD: ${ORACLE_PASSWORD:?Preencha ORACLE_PASSWORD}
+      APP_USER: ${DB_USER:?Preencha DB_USER}
+      APP_USER_PASSWORD: ${DB_PASSWORD:?Preencha DB_PASSWORD}
+    volumes:
+      - oracle_data:/opt/oracle/oradata
+    networks: [backend]
+    healthcheck:
+      test: ["CMD", "healthcheck.sh"]
+      interval: 10s
+      timeout: 10s
+      retries: 30
+      start_period: 60s
+  app:
+    image: ${APP_IMAGE:?Informe a imagem construida}
+    depends_on:
+      oracle:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:${APP_PORT:?Informe a porta do ambiente}:8080"
+    environment:
+      DB_URL: jdbc:oracle:thin:@oracle:1521/FREEPDB1
+      DB_USER: ${DB_USER:?Preencha DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD:?Preencha DB_PASSWORD}
+      JWT_SECRET: ${JWT_SECRET:?Preencha JWT_SECRET}
+    networks: [backend]
+volumes:
+  oracle_data:
+networks:
+  backend:

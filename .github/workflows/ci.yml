@@ -1,4 +1,4 @@
-name: CI - Build e testes SmartCollector
+name: CI/CD - SmartCollector
 
 on:
   push:
@@ -11,40 +11,39 @@ permissions:
   contents: read
 
 jobs:
-  build-and-test:
-    name: Build Java, testes Oracle e imagem Docker
+  build-test-deploy:
+    name: Build, testes, staging e producao
     runs-on: ubuntu-latest
     timeout-minutes: 25
+    env:
+      APP_IMAGE: smartcollector-ci:${{ github.sha }}
+      DB_USER: smartcollector
+      DB_PASSWORD: temporary_demo_app_password
+      ORACLE_PASSWORD: temporary_demo_oracle_password
+      JWT_SECRET: temporary_demo_jwt_secret_for_this_pipeline
 
     steps:
-      - name: Baixar o código do repositório
+      - name: Baixar o codigo
         uses: actions/checkout@v7
         with:
           persist-credentials: false
 
-      - name: Conferir Docker e validar o Compose de testes
-        run: |
-          docker version
-          docker compose version
-          docker compose -p smartcollector-ci -f compose.test.yml config --quiet
+      - name: Validar configuracao de testes
+        run: docker compose -p smartcollector-ci -f compose.test.yml config --quiet
 
-      - name: Compilar e executar os testes com Oracle
+      - name: Build Java e testes automatizados com Oracle
         run: |
           docker compose -p smartcollector-ci -f compose.test.yml up \
-            --abort-on-container-exit \
-            --exit-code-from tests \
-            --attach tests
+            --abort-on-container-exit --exit-code-from tests --attach tests
 
-      - name: Copiar logs e relatórios dos testes
+      - name: Coletar relatorios dos testes
         if: always()
         run: |
           mkdir -p test-results
-          docker compose -p smartcollector-ci -f compose.test.yml logs \
-            --no-color > test-results/containers.log
-          docker compose -p smartcollector-ci -f compose.test.yml cp \
-            tests:/workspace/target/surefire-reports ./test-results/
+          docker compose -p smartcollector-ci -f compose.test.yml logs --no-color > test-results/containers.log
+          docker compose -p smartcollector-ci -f compose.test.yml cp tests:/workspace/target/surefire-reports ./test-results/
 
-      - name: Guardar os resultados no GitHub
+      - name: Guardar relatorios dos testes
         if: always()
         uses: actions/upload-artifact@v7
         with:
@@ -53,10 +52,60 @@ jobs:
           retention-days: 14
           if-no-files-found: error
 
-      - name: Construir a imagem Docker da aplicação
-        run: docker build -t smartcollector-ci:${{ github.sha }} .
-
-      - name: Encerrar o ambiente de testes
+      - name: Encerrar banco de testes
         if: always()
+        run: docker compose -p smartcollector-ci -f compose.test.yml down --volumes
+
+      - name: Construir imagem Docker
+        run: docker build -t "$APP_IMAGE" .
+
+      - name: Preparar captura das evidencias
+        if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
         run: |
-          docker compose -p smartcollector-ci -f compose.test.yml down --volumes
+          python -m pip install playwright==1.56.0
+          python -m playwright install --with-deps chromium
+
+      - name: Deploy automatico em staging
+        if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+        env:
+          APP_PORT: "8081"
+        run: |
+          docker compose -p smartcollector-staging -f compose.deploy.yml up -d --wait --wait-timeout 360
+          python scripts/check-deploy.py staging http://127.0.0.1:8081
+          python scripts/capture-evidence.py staging
+          cat evidencias/staging.md >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Deploy automatico em producao
+        if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+        env:
+          APP_PORT: "8082"
+        run: |
+          docker compose -p smartcollector-production -f compose.deploy.yml up -d --wait --wait-timeout 360
+          python scripts/check-deploy.py production http://127.0.0.1:8082
+          python scripts/capture-evidence.py production
+          cat evidencias/production.md >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Registrar estado e logs dos ambientes
+        if: always() && github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+        run: |
+          mkdir -p evidencias
+          for target in staging production; do
+            if [ "$target" = staging ]; then export APP_PORT=8081; else export APP_PORT=8082; fi
+            docker compose -p "smartcollector-$target" -f compose.deploy.yml ps -a > "evidencias/$target-containers.txt"
+            docker compose -p "smartcollector-$target" -f compose.deploy.yml logs --no-color > "evidencias/$target-logs.txt"
+          done
+
+      - name: Guardar evidencias de staging e producao
+        if: always() && github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+        uses: actions/upload-artifact@v7
+        with:
+          name: evidencias-deploy
+          path: evidencias/
+          retention-days: 14
+          if-no-files-found: error
+
+      - name: Encerrar ambientes temporarios
+        if: always() && github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+        run: |
+          APP_PORT=8081 docker compose -p smartcollector-staging -f compose.deploy.yml down --volumes
+          APP_PORT=8082 docker compose -p smartcollector-production -f compose.deploy.yml down --volumes
